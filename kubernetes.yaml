@@ -1,0 +1,7 @@
+- name: elasticsearch-master-1
+  hosts: master-1
+  remote_user: ubuntu
+  become: yes
+  become_method: sudo
+  roles:
+   - setup

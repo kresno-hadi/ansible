@@ -1,0 +1,33 @@
+- name: copying file with playbook
+  become: true 
+  copy:
+    src: ./cluster.yml
+    dest: /home/ubuntu/
+- name: update instance
+  raw: sudo apt update
+- name: setup repository
+  raw: sudo apt install apt-transport-https ca-certificates curl software-properties-common -y
+- name: add docker GPG
+  raw: curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -
+- name: add repo
+  raw: sudo add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu focal stable"
+- name: update instance
+  raw: sudo apt update
+- name: docker install
+  raw: sudo apt-get install docker-ce docker-ce-cli containerd.io -y
+- name: give permission docker to ubuntu-server
+  raw: sudo usermod -aG docker $USER
+- name: download rke
+  raw: wget https://github.com/rancher/rke/releases/download/v1.3.1/rke_linux-amd64 && mv rke_linux-amd64 rke && chmod +x rke && mv rke /usr/bin/
+- name: Download kubectl
+  raw: curl -LO "https://storage.googleapis.com/kubernetes-release/release/$(curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt)/bin/linux/amd64/kubectl" && chmod +x kubectl &&  mv kubectl /usr/bin/
+- name: build cluster
+  raw: rke up
+- name: cp kube config
+  raw: mkdir -p /home/ubuntu/.kube && cp kube_config_cluster.yml /home/ubuntu/.kube/config && chmod 777 /home/ubuntu/.kube/config
+- name: run rancher
+  raw: docker run -d --name rancher-web --restart=unless-stopped -p 80:80 -p 443:443 --privileged rancher/rancher:v2.4.15
+
+
+#- name: run docker kubernetes
+#  raw: docker run -d  --volume=/:/rootfs:ro  --volume=/sys:/sys:ro --volume=/var/lib/docker/:/var/lib/docker:rw --volume=/var/lib/kubelet/:/var/lib/kubelet:rw --volume=/var/run:/var/run:rw --net=host --pid=host --privileged gcr.io/google_containers/hyperkube-amd64:v1.17.9 kubelet --hostname-override=127.0.0.1 --config=/etc/kubernetes/manifests --allow-privileged --v=2
